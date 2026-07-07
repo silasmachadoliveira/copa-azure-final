@@ -131,27 +131,71 @@ function isGroupComplete(groupName, groupMatches) {
 // Matching bipartite com backtrack: 8 melhores 3ºs → 8 slots elegíveis FIFA.
 function matchThirdsToSlots(top8Thirds) {
   const assignments = new Map(); // matchNum → third
-  const slotsAvailable = new Set(R32_THIRD_SLOTS.map(s => s.matchNum));
 
-  function backtrack(idx) {
-    if (idx === top8Thirds.length) return true;
-    const third = top8Thirds[idx];
-    for (const slot of R32_THIRD_SLOTS) {
-      if (!slotsAvailable.has(slot.matchNum)) continue;
-      if (!slot.eligibleGroups.includes(third.group_name)) continue;
-      assignments.set(slot.matchNum, third);
-      slotsAvailable.delete(slot.matchNum);
-      if (backtrack(idx + 1)) return true;
-      assignments.delete(slot.matchNum);
-      slotsAvailable.add(slot.matchNum);
+  // Tabela oficial FIFA: para cada combinação de grupos classificados,
+  // define qual grupo vai para qual slot (matchNum).
+  // Fonte: regulamento FIFA World Cup 2026 - allocation of best third-placed teams.
+  //
+  // A tabela abaixo mapeia grupo → matchNum baseado na combinação real
+  // dos 8 grupos que classificaram terceiros (B,D,E,F,I,J,K,L neste caso).
+  //
+  // Regra: cada slot tem eligibleGroups; a FIFA preenche de forma que
+  // cada terceiro vai para o slot mais "natural" do seu grupo.
+  const FIFA_ALLOCATION = {
+    // Combinação: B, D, E, F, I, J, K, L
+    'B,D,E,F,I,J,K,L': {
+      74: 'D',   // Melhor 3º (A/B/C/D/F) → Paraguai (D)
+      77: 'F',   // Melhor 3º (C/D/F/G/H) → Suécia (F)
+      79: 'E',   // Melhor 3º (C/E/F/H/I) → Equador (E)
+      80: 'K',   // Melhor 3º (E/H/I/J/K) → RD Congo (K)
+      81: 'B',   // Melhor 3º (B/E/F/I/J) → Bósnia (B)
+      82: 'I',   // Melhor 3º (A/E/H/I/J) → Senegal (I)
+      85: 'J',   // Melhor 3º (E/F/G/I/J) → Argélia (J)
+      87: 'L',   // Melhor 3º (D/E/I/J/L) → Gana (L)
+    },
+  };
+
+  // Determinar combinação de grupos
+  const groupsCombination = top8Thirds
+    .map(t => t.group_name)
+    .sort()
+    .join(',');
+
+  const allocation = FIFA_ALLOCATION[groupsCombination];
+
+  if (allocation) {
+    // Usar tabela fixa FIFA
+    for (const [matchNum, group] of Object.entries(allocation)) {
+      const third = top8Thirds.find(t => t.group_name === group);
+      if (third) {
+        assignments.set(parseInt(matchNum), third);
+      }
     }
-    return false;
+  } else {
+    // Fallback: backtracking (para combinações não mapeadas)
+    const slotsAvailable = new Set(R32_THIRD_SLOTS.map(s => s.matchNum));
+
+    function backtrack(idx) {
+      if (idx === top8Thirds.length) return true;
+      const third = top8Thirds[idx];
+      for (const slot of R32_THIRD_SLOTS) {
+        if (!slotsAvailable.has(slot.matchNum)) continue;
+        if (!slot.eligibleGroups.includes(third.group_name)) continue;
+        assignments.set(slot.matchNum, third);
+        slotsAvailable.delete(slot.matchNum);
+        if (backtrack(idx + 1)) return true;
+        assignments.delete(slot.matchNum);
+        slotsAvailable.add(slot.matchNum);
+      }
+      return false;
+    }
+
+    if (top8Thirds.length === 8 && !backtrack(0)) {
+      console.warn('[bracket] matching bipartite falhou — combinação dos 8 melhores 3ºs sem alocação válida');
+      return new Map();
+    }
   }
 
-  if (top8Thirds.length === 8 && !backtrack(0)) {
-    console.warn('[bracket] matching bipartite falhou — combinação dos 8 melhores 3ºs sem alocação válida');
-    return new Map();
-  }
   return assignments;
 }
 
@@ -159,7 +203,16 @@ function matchThirdsToSlots(top8Thirds) {
 // de desempate (penalties) — admin precisa colocar placar diferente.
 function pickWinnerLoser(match, knockoutTeamMap) {
   if (match.status !== 'finished' || match.home_score === null || match.away_score === null) return null;
-  if (match.home_score === match.away_score) return null; // empate sem suporte
+  if (match.home_score === match.away_score) {
+    if (match.home_penalties != null && match.away_penalties != null && match.home_penalties !== match.away_penalties) {
+      const home = knockoutTeamMap.get(match.home_team_id);
+      const away = knockoutTeamMap.get(match.away_team_id);
+      if (!home || !away) return null;
+      if (match.home_penalties > match.away_penalties) return { winner: home, loser: away };
+      return { winner: away, loser: home };
+    }
+    return null;
+  }
   const home = knockoutTeamMap.get(match.home_team_id);
   const away = knockoutTeamMap.get(match.away_team_id);
   if (!home || !away) return null;
@@ -183,7 +236,7 @@ router.get('/', async (req, res) => {
 
     const matchesRes = await query(`
       SELECT m.id, m.home_team_id, m.away_team_id, m.group_name, m.stage,
-             m.home_score, m.away_score, m.status,
+             m.home_score, m.away_score, m.home_penalties, m.away_penalties, m.status,
              CONVERT(varchar(10), m.date, 23) AS match_date,
              CONVERT(varchar(5), m.time, 108) AS time,
              s.name AS stadium_name,
