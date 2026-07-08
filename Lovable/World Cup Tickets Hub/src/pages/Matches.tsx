@@ -33,7 +33,7 @@ interface ApiMatch {
 const STAGE_OPTIONS: { value: string; label: string }[] = [
   { value: 'all', label: 'Todos' },
   { value: 'Fase de Grupos', label: 'Fase de Grupos' },
-  { value: 'round_of_32', label: '32 avos' },
+  { value: 'round_of_32', label: '16 avos' },
   { value: 'round_of_16', label: 'Oitavas' },
   { value: 'quarter_final', label: 'Quartas' },
   { value: 'semi_final', label: 'Semis' },

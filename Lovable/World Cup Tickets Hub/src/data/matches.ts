@@ -19,7 +19,7 @@ export interface Match {
 
 export const phaseLabels: Record<MatchPhase, string> = {
   'group': 'Fase de Grupos',
-  'round32': '32-avos de Final',
+  'round32': '16 avos de Final',
   'round16': 'Oitavas de Final',
   'quarterfinals': 'Quartas de Final',
   'semifinals': 'Semifinais',
@@ -121,7 +121,7 @@ export const matches: Match[] = [
   { id: "m71", homeTeamId: "alg", awayTeamId: "aut", stadiumId: "arrowhead", date: "2026-06-27", time: "23:00", phase: "group", group: "J", matchNumber: 71, availableTickets: { vip: 4200, cat1: 22000, cat2: 50000 } },
   { id: "m72", homeTeamId: "jor", awayTeamId: "arg", stadiumId: "att", date: "2026-06-27", time: "23:00", phase: "group", group: "J", matchNumber: 72, availableTickets: { vip: 4500, cat1: 22000, cat2: 53500 } },
   
-  // ============ 32-AVOS DE FINAL (MATA-MATA) ============
+  // ============ 16 AVOS DE FINAL (MATA-MATA) ============
   { id: "m73", homeTeamId: "tbd-2a", awayTeamId: "tbd-2b", stadiumId: "sofi", date: "2026-06-28", time: "16:00", phase: "round32", matchNumber: 73, availableTickets: { vip: 4000, cat1: 20000, cat2: 46000 } },
   { id: "m74", homeTeamId: "tbd-1e", awayTeamId: "tbd-r32-1", stadiumId: "gillette", date: "2026-06-29", time: "17:30", phase: "round32", matchNumber: 74, availableTickets: { vip: 3500, cat1: 18000, cat2: 44000 } },
   { id: "m75", homeTeamId: "tbd-1f", awayTeamId: "tbd-2c", stadiumId: "bbva", date: "2026-06-29", time: "22:00", phase: "round32", matchNumber: 75, availableTickets: { vip: 3000, cat1: 15000, cat2: 35500 } },

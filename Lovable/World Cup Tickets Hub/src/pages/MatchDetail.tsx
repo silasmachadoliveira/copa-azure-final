@@ -57,7 +57,7 @@ interface ApiStadium {
 const STAGE_LABELS: Record<string, string> = {
   'Fase de Grupos': 'Fase de Grupos',
   group: 'Fase de Grupos',
-  round_of_32: '32 avos de Final',
+  round_of_32: '16 avos de Final',
   round_of_16: 'Oitavas de Final',
   quarter_final: 'Quartas de Final',
   semi_final: 'Semifinal',
