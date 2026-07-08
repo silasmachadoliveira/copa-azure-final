@@ -85,10 +85,8 @@ interface Stadium {
 }
 
 const phaseLabels: Record<string, string> = {
-  group: 'Fase de Grupos',
   'Fase de Grupos': 'Fase de Grupos',
   round_of_32: '16 avos de Final',
-  '16 avos': '16 avos de Final',
   round_of_16: 'Oitavas de Final',
   quarter_final: 'Quartas de Final',
   semi_final: 'Semifinal',
