@@ -59,6 +59,8 @@ interface Match {
   stadium_id: number;
   home_score: number | null;
   away_score: number | null;
+  home_penalties: number | null;
+  away_penalties: number | null;
   status: string;
   home_team_name: string;
   home_team_code: string;
@@ -84,7 +86,9 @@ interface Stadium {
 
 const phaseLabels: Record<string, string> = {
   group: 'Fase de Grupos',
-  round_of_32: 'Oitavas de Final',
+  'Fase de Grupos': 'Fase de Grupos',
+  round_of_32: '16 avos de Final',
+  '16 avos': '16 avos de Final',
   round_of_16: 'Oitavas de Final',
   quarter_final: 'Quartas de Final',
   semi_final: 'Semifinal',
@@ -104,7 +108,7 @@ const AdminMatches: React.FC = () => {
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [closingMatch, setClosingMatch] = useState<Match | null>(null);
-  const [closingScore, setClosingScore] = useState({ home: '', away: '' });
+  const [closingScore, setClosingScore] = useState({ home: '', away: '', homePen: '', awayPen: '' });
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -117,6 +121,8 @@ const AdminMatches: React.FC = () => {
     group_name: '',
     home_score: '',
     away_score: '',
+    home_penalties: '',
+    away_penalties: '',
     status: 'scheduled',
   });
 
@@ -164,6 +170,8 @@ const AdminMatches: React.FC = () => {
       group_name: match.group_name || '',
       home_score: match.home_score?.toString() || '',
       away_score: match.away_score?.toString() || '',
+      home_penalties: match.home_penalties?.toString() || '',
+      away_penalties: match.away_penalties?.toString() || '',
       status: match.status || 'scheduled',
     });
     setIsDialogOpen(true);
@@ -181,6 +189,8 @@ const AdminMatches: React.FC = () => {
       group_name: '',
       home_score: '',
       away_score: '',
+      home_penalties: '',
+      away_penalties: '',
       status: 'scheduled',
     });
     setIsDialogOpen(true);
@@ -204,6 +214,8 @@ const AdminMatches: React.FC = () => {
         group_name: formData.group_name || undefined,
         home_score: formData.home_score ? parseInt(formData.home_score) : undefined,
         away_score: formData.away_score ? parseInt(formData.away_score) : undefined,
+        home_penalties: formData.home_penalties ? parseInt(formData.home_penalties) : undefined,
+        away_penalties: formData.away_penalties ? parseInt(formData.away_penalties) : undefined,
         status: formData.status,
       };
 
@@ -233,6 +245,8 @@ const AdminMatches: React.FC = () => {
     setClosingScore({
       home: match.home_score?.toString() || '',
       away: match.away_score?.toString() || '',
+      homePen: match.home_penalties?.toString() || '',
+      awayPen: match.away_penalties?.toString() || '',
     });
   };
 
@@ -256,6 +270,8 @@ const AdminMatches: React.FC = () => {
         group_name: closingMatch.group_name || undefined,
         home_score: home,
         away_score: away,
+        home_penalties: closingScore.homePen ? parseInt(closingScore.homePen) : undefined,
+        away_penalties: closingScore.awayPen ? parseInt(closingScore.awayPen) : undefined,
         status: 'finished',
       });
       if (result.error) {
@@ -411,7 +427,7 @@ const AdminMatches: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
                     <div>
-                      <p className="font-medium">{match.date ? new Date(match.date).toLocaleDateString('pt-BR') : '-'}</p>
+                      <p className="font-medium">{match.date ? new Date(match.date.slice(0,10) + "T12:00:00").toLocaleDateString('pt-BR') : '-'}</p>
                       <p className="text-sm text-muted-foreground">{match.time}</p>
                     </div>
                   </div>
@@ -555,6 +571,19 @@ const AdminMatches: React.FC = () => {
                   <Label>Placar Visitante</Label>
                   <Input type="number" value={formData.away_score} onChange={(e) => setFormData({ ...formData, away_score: e.target.value })} />
                 </div>
+                {/* Pênaltis - aparece quando é mata-mata */}
+                {formData.stage && formData.stage !== 'Fase de Grupos' && formData.home_score && formData.away_score && formData.home_score === formData.away_score && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>Pênaltis Casa</Label>
+                      <Input type="number" min="0" value={formData.home_penalties} onChange={(e) => setFormData({ ...formData, home_penalties: e.target.value })} placeholder="Ex: 3" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Pênaltis Visitante</Label>
+                      <Input type="number" min="0" value={formData.away_penalties} onChange={(e) => setFormData({ ...formData, away_penalties: e.target.value })} placeholder="Ex: 4" />
+                    </div>
+                  </>
+                )}
                 <div className="space-y-2">
                   <Label>Status</Label>
                   <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
@@ -612,6 +641,34 @@ const AdminMatches: React.FC = () => {
                   />
                 </div>
               </div>
+              {/* Pênaltis - só aparece em mata-mata quando placar é empate */}
+              {closingMatch.stage !== 'Fase de Grupos' && closingScore.home === closingScore.away && closingScore.home !== '' && (
+                <div className="space-y-2">
+                  <Label className="text-center block text-sm font-medium">Pênaltis (disputa)</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <Label className="text-xs">{closingMatch.home_team_code} (pen)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={closingScore.homePen || ''}
+                        onChange={(e) => setClosingScore({ ...closingScore, homePen: e.target.value })}
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">{closingMatch.away_team_code} (pen)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={closingScore.awayPen || ''}
+                        onChange={(e) => setClosingScore({ ...closingScore, awayPen: e.target.value })}
+                        placeholder="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2 justify-end pt-2">
                 <Button variant="outline" onClick={() => setClosingMatch(null)} disabled={saving}>
                   Cancelar
