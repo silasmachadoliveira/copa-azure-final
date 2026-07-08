@@ -67,7 +67,7 @@ const STAGE_LABELS: Record<string, string> = {
 
 function formatDateBR(dateIso: string): string {
   if (!dateIso) return '-';
-  const d = new Date(dateIso);
+  const [y, m, day] = dateIso.slice(0, 10).split("-"); const d = new Date(+y, +m - 1, +day);
   return d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
 }
 
